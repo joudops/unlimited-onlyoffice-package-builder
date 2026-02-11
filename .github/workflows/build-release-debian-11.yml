@@ -84,6 +84,25 @@ jobs:
         id: docker-build-binaries
         run: |
           sudo ./onlyoffice-package-builder.sh --product-version=${{ steps.get-product-version.outputs.product-version }} --build-number=${{ steps.get-build-number.outputs.build-number }} --unlimited-organization=${{ github.repository_owner }} --tag-suffix=${{ env.TAG_SUFFIX }} --debian-package-suffix=${{ env.DEBIAN_PACKAGE_SUFFIX }} --binaries-only
+      - name: Debug - verify binaries output
+        run: |
+          set -e
+          echo "== build_tools/out tree (dirs) =="
+          sudo find build_tools/out -maxdepth 6 -type d -print || true
+          echo "== build_tools/out files (first 200) =="
+          sudo find build_tools/out -maxdepth 8 -type f -print | head -n 200 || true
+
+          if [ ! -d "build_tools/out/linux_64/onlyoffice/documentserver" ]; then
+            echo "ERROR: binaries output folder missing: build_tools/out/linux_64/onlyoffice/documentserver"
+            exit 2
+          fi
+
+          if ! sudo find "build_tools/out/linux_64/onlyoffice/documentserver" -maxdepth 1 -type f | grep -q .; then
+            echo "ERROR: binaries output folder exists but is empty"
+            exit 3
+          fi
+
+          echo "OK: binaries output looks present"
       - name: Docker prune all containers
         id: docker-prune-all-containers
         run: |
